@@ -1,0 +1,464 @@
+#!/usr/bin/env perl 
+
+=head1 NAME
+
+  napoop - Nucleic acid sequnce utility using Napoop.pm
+
+=head1 SYNOPSIS
+
+  napoop [-a Name] [-c] [-d aa|DNA|RNA] [-e] [-f Number] [-g Name] \
+         [-h] [-l] [-m] [-n] [-o] [-p Fasta] [-r] [-s Pos1-Pos2] \
+         [-t [Number]] [-u] [-w] [-z]
+
+=head1 USAGE
+
+  $ napoop               Is equivalent to adding "-h"
+  $ napoop -a Impact     Changes the FASTA header, be longer than 1
+  $ napoop -c            Prints the complementary sequence
+  $ napoop -d aa         Prints amino acids
+  $ napoop -d DNA        Prints the DNA codon table
+  $ napoop -d RNA        Prints the RNA codon table
+  $ napoop -e            Prints the FASTA header and continue
+  $ napoop -f 1          Reformats the sequence in a single line
+  $ napoop -f 66         Reformats the sequence which spaces
+  $ napoop -f 80         Reformats the sequence
+  $ napoop -g chrY       Select one FASTA sequence form multiple ones
+  $ napoop -h            Shows a simple usage
+  $ napoop -l            Prints the length
+  $ napoop -m            Shows CpG information
+  $ napoop -n            Prints all the nucleotide symbols
+  $ napoop -o            Prints each nucleotide content
+  $ napoop -p ref.fa     Compares two sequences
+  $ napoop -r            Reverse sequence (3' to 5')
+  $ napoop -s 8-16       Snip a specified region, commas are allowed
+  $ napoop -t [0-6]      Translate the sequence
+  $ napoop -u            Print the sequence in uppercase
+  $ napoop -w            Print the sequence in lowercase
+  $ napoop -z            Print each length in bp for a multiple FASTA
+
+  $ napoop -n | sort | perl -nae 'print "$F[0]\n"' | napoop -w
+
+=head1 DESCRIPTION
+
+  Hopefully, this script is a very useful one
+  to handle varous nucleic acid sequences, i.e. DNAs and RNAs.
+  Originally, Napoop.pm was written to study object-oriented
+  programming in Perl.
+  After coding Napoop.pm, preexisting miscellanious
+  scripts were gathered to complete this script, napoop.
+  The name NA, P, and OOP stand for Nucleic Acids, Perl,
+  and Object-Oriented Programming, respectively.
+
+=head1 OPTIONS
+
+  -a  The FASTA heaer is replaced and printed,
+      so the argument is required after "-a".
+      The script continues the process,
+      in other words, "-a" can be used with others,
+      except for "-e".
+  -c  The complementary sequence is printed.
+  -d  The condon table is printed.
+      An argument is required.
+      If any string starting from 'D' or 'd' is followed,
+      the DNA codon table is printed.
+      If any string starting from 'R' or 'r', is followed,
+      the RNA codon table is printed.
+      In other cases, information on amino acids is printed.
+  -e  The FASTA header is printed prior to the printing
+      of the sequence.
+      This "-e" and "-a" are mutually exclusive.
+  -f  Reformatted sequence is printed.
+      If the argument is 1,
+      it is printed in a single line without any spaces.
+      If the argument is a multiple of 11,
+      it is printed with a space in every 10 bp.
+      Otherwise, the sequence is printed in multiple lines
+      with "argument" bp each line.
+  -g  Select a single FASTA format form a multiple FASTA sequences.
+      The argument should match the header.
+  -h  This PD is printed.
+  -l  The length of the sequence is printed.
+  -m  The CpG score and G+C content are printed.
+      G+C content is shown in percentage and parenthesized.
+  -n  All the nucleotide symbols are printed.
+  -o  Each nucleotide content is printed.
+      The first, second, and third columns show
+      nucleotide, count, and ratio.
+  -p  Compares two sequences which are input from the standard
+      input and specified this option.
+      If they are identical, nothing is printed.
+      Otherwise, the first mismatch position is printed.
+  -r  The reverse sequence is printed.
+      It is not the complementary sequence,
+      but just a reverse one from 3' to 5'.
+      It is useful to draw a double-stranded DNA.
+  -t  Translated amino acid sequence is printed.
+      0-2 and 3-5 specify the three frames in the original
+      and complementary strand, respectively.
+  -s  Snipped sequence is printed.
+      The region should by specified like "101-200"
+      which are 1-based integer coordinates.
+      If the order of the two numbers are reversed,
+      its complementary sequence is printed.
+  -u  The sequence is printed all in uppercase.
+  -w  The sequence is printed all in lowercase.
+  -z  Each length in bp is printed onto the standard output
+      for an input multiple FASTA file
+
+=head1 BUGS
+
+  When the sequence is very short, "D" is printed
+  just after the result.
+
+=head1 AUTHOR
+
+  Coded by Kohji OKAMURA, Ph.D.
+
+=head1 HISTORY
+
+  Jan 29, 2008  Start coding the first version
+  Feb 18, 2008  Modified
+  Jan 15, 2009  snip (-s) is modified
+  Mar 28, 2009  content (-o) is added
+  Apr 03, 2009  Support complementary for option -s
+  Jun 11, 2009  Consider only the first entry in multi-FASTA
+  Mar 29, 2010  Commas are allowed when using -s
+  Apr 30, 2010  Subroutine usage executes perldoc
+  Aug 20, 2012  shebang changed
+  Nov 14, 2012  bug fixed, option -t, limmiting 0-5
+  Jul 17, 2013  Option -g supported
+  Oct 17, 2014  Option -p supported; renamed to na
+  Jun 29, 2015  Option -z supported
+  Jun 20, 2016  Renamed as napoop from na
+  Jun 29, 2016  Released as napoop 1.0 via GitHub
+
+=cut
+
+
+use strict;
+use warnings;
+use English;
+use Napoop;
+use Getopt::Std;
+
+my %opts;
+getopts 'a:cd:ef:g:hlmnop:rs:t:uwz', \%opts;
+
+## prints the codon table
+if (defined $opts{d})
+{
+  if ($opts{d} =~ m/^D/i)    { &DNA_codon_table; exit }
+  elsif ($opts{d} =~ m/^R/i) { &RNA_codon_table; exit }
+  else                       { &amino_acids;     exit }
+}
+
+## prints a simple usage
+elsif (defined $opts{h})
+{
+  sub usage { exec "perldoc $0"; }
+  &usage
+}
+
+## prints all the nucleotide symbols
+if (defined $opts{n})
+{
+  &nucleotides; exit
+}
+
+## select a single FASTA format
+if (defined $opts{g})
+{
+  my $line;
+  my $flag = 0;
+  while ($line = <ARGV>)
+  {
+    if ($flag == 0)
+    { if ($line =~ m/^>\s*$opts{g}\s*\n$/) { print $line; $flag = 1 } }
+    else { $line =~ m/^>/ ? exit : print $line }
+  }
+  exit;
+}
+
+## print each length for a multiple FASTA
+if (defined $opts{z})
+{
+  my $line = <ARGV>;
+  unless ($line =~ m/^>/)                   { die "FASTA header error: $line" }
+  my $seq = '';
+  my $len;
+  while ($line = <ARGV>)
+  {
+    if ($line =~ m/^[A-Za-z\s\:\-]*\n$/)
+    { $line =~ tr/A-Za-z//cd; $seq .= $line }
+    elsif ($line =~ m/^>/)
+    { print ((length $seq), "\n"); $seq = '' }
+    else                                  { die "FASTA sequence error: $line" }
+  }
+  print ((length $seq), "\n");	# for the last entry
+  exit;
+}
+
+## reads the input sequence
+my @sequence = <ARGV>;
+my $i = 0;
+for (@sequence)	# check whether it is a multi-FASTA-formatted file or not
+{
+  if ($i > 0 and $_ =~ m/^>/)
+  {
+    print STDERR "Multi-FASTA format: only the first entry is considered.\n";
+    last;
+  }
+  ++$i;
+}
+for (my $j = $i; $j < scalar @sequence; $j++) { delete $sequence[$j] }
+	# remove the second and following entries in multi-FASTA
+my $sequence = join '', @sequence;
+my $gene = Napoop->new(original => $sequence);
+
+## manipulates the FASTA header
+if (defined $opts{a})
+{ $gene->set_definition($opts{a}); print '>', $opts{a}, "\n"; }
+elsif (defined $opts{e})
+{ print '>', $gene->get_definition, "\n"; }	# does not exit
+
+## prints the complementary sequence
+if (defined $opts{c})
+{
+  print $gene->complementary, "\n"; exit
+}
+
+## reformats the sequence
+elsif (defined $opts{f})
+{
+  my $seq = $gene->get_sequence;
+  my $last_char;
+  if ($opts{f} == 1) { print $seq, "\n" }
+  elsif ($opts{f} > 0 and $opts{f} % 11 == 0)
+  {
+    my $chars = $opts{f} - 1;
+    $seq =~ s/(.{10})/$1 /g;
+    $seq =~ s/(.{$chars}) /$1\n/g;
+    $last_char = chop $seq;
+    if ($last_char eq "\n") { print $seq, $last_char }
+    else                    { print $seq, $last_char, "\n" }
+  }
+  else
+  {
+    $seq =~ s/(.{$opts{f}})/$1\n/g;
+    $last_char = chop $seq;
+    if ($last_char eq "\n") { print $seq, $last_char }
+    else                    { print $seq, $last_char, "\n" }
+  }
+  exit
+}
+
+## prints the length of the sequence
+elsif (defined $opts{l})
+{
+  print $gene->len, "\n"; exit
+}
+
+## prints the CpG score and G+C content
+elsif (defined $opts{m})
+{
+  my (@cpg) = $gene->cpg_score;
+  printf "%.4f (%.2f%%)\n", $cpg[0], $cpg[1] * 100; exit
+}
+
+## prints each nucleotide content
+elsif (defined $opts{o})
+{
+  my %counter = $gene->content;
+
+  if ($gene->len == 0) { exit }
+  for (sort keys %counter)
+  {
+    print uc $_; print "\t$counter{$_}\t";
+    printf ("%.4f\n", ($counter{$_} / $gene->len));
+  }
+
+  exit
+}
+
+## compare two sequences
+elsif (defined $opts{p})
+{
+  open OPTP, $opts{p}                             or die "$OS_ERROR: $opts{p}";
+  my @optp = <OPTP>;
+  close OPTP;
+  my @len;	# (0: optp, 1: stdin, 2: shorter)
+  my $seq = join '', @optp;
+  my $optp = Napoop->new(original => $seq);
+  $len[0] = $optp->len;
+  $len[1] = $gene->len;
+  if    ($len[0] < $len[1]) { $len[3] = $len[2] = $len[0] }
+  elsif ($len[0] > $len[1]) { $len[4] = $len[2] = $len[1] }
+  else                      { $len[2] = $len[0] }
+  my $i;
+  for ($i = 0; $i < $len[2]; $i++)
+  {
+    $len[0] = uc substr $optp->get_sequence, $i, 1;
+    $len[1] = uc substr $gene->get_sequence, $i, 1;
+    if ($len[0] eq $len[1]) { next }
+    else
+    { $i++; print "$i\t$len[0]\t$len[1]\n"; exit }
+  }
+  if (defined $len[3])
+  {
+    $len[1] = uc substr $gene->get_sequence, $len[3], 1;
+    $i = $len[3] + 1;
+    print "$i\t-\t$len[1]\n";
+    exit
+  }
+  elsif (defined $len[4])
+  {
+    $len[0] = uc substr $optp->get_sequence, $len[4], 1;
+    $i = $len[4] + 1;
+    print "$i\t$len[0]\t-\n";
+  }
+  exit
+}
+
+## prints the reverse sequence (3' -> 5')
+elsif (defined $opts{r})
+{
+  my $rev = reverse $gene->get_sequence; print $rev, "\n"; exit
+}
+
+## snips and prints a specified region in the sequence
+elsif (defined $opts{s})
+{
+  my ($begin, $end) = (1, $gene->len);
+  $opts{s} =~ tr/,//d;
+  if ($opts{s} =~ m/^(\d+)\-(\d+)$/) { ($begin, $end) = ($1, $2) }
+  elsif ($opts{s} =~ m/^(d+)$/)      { $begin = $1 }
+  else          { die "Unrecognized argument to snip: $opts{s}"; }
+  # if ($begin > $gene->len or $end > $gene->len)
+  # { die "Out of range to snip: $opts{s}"; }
+  print $gene->snip($begin, $end), "\n"; exit
+}
+
+## translates the DNA or RNA sequence
+elsif (defined $opts{t})
+{
+  if ($opts{t} !~ m/^[0-5]$/) { &usage }
+  print $gene->translate($opts{t}), "\n";
+}
+
+## prints the sequence in uppercase
+elsif (defined $opts{u})
+{
+  print ((uc $gene->get_sequence), "\n"); exit
+}
+
+## prints the sequence in lowercase
+elsif (defined $opts{w})
+{
+  print ((lc $gene->get_sequence), "\n"); exit
+}
+
+## prints the simple usage and exit
+else { &usage }
+
+
+sub nucleotides
+{
+print <<ALL_NUCLEOTIDES;
+T    thymine      thymidine
+C    cytosine     cytidine
+A    adenine      adenosine
+G    guanine      guanosine
+U    uracil       uridine
+I    hypoxanthine inosine
+Y    T/C          pyrimidine
+R    A/G          purine
+K    T/G          keto
+M    C/A          amino
+W    T/A          weak
+S    C/G          strong
+V    C/A/G        not T
+D    A/G/T        not C
+B    G/T/C        not A
+H    T/C/A        not G
+N    T/C/A/G      any
+ALL_NUCLEOTIDES
+}
+
+
+sub DNA_codon_table
+{
+print <<DNA_CODON;
+TTT	F	TCT	S	TAT	Y	TGT	C
+TTC	F	TCC	S	TAC	Y	TGC	C
+TTA	L	TCA	S	TAA	*	TGA	*
+TTG	L	TCG	S	TAG	*	TGG	W
+CTT	L	CCT	P	CAT	H	CGT	R
+CTC	L	CCC	P	CAC	H	CGC	R
+CTA	L	CCA	P	CAA	Q	CGA	R
+CTG	L	CCG	P	CAG	Q	CGG	R
+ATT	I	ACT	T	AAT	N	AGT	S
+ATC	I	ACC	T	AAC	N	AGC	S
+ATA	I	ACA	T	AAA	K	AGA	R
+ATG	M	ACG	T	AAG	K	AGG	R
+GTT	V	GCT	A	GAT	D	GGT	G
+GTC	V	GCC	A	GAC	D	GGC	G
+GTA	V	GCA	A	GAA	E	GGA	G
+GTG	V	GCG	A	GAG	E	GGG	G
+DNA_CODON
+}
+
+
+sub RNA_codon_table
+{
+print <<RNA_CODON;
+UUU	F	UCU	S	UAU	Y	UGU	C
+UUC	F	UCC	S	UAC	Y	UGC	C
+UUA	L	UCA	S	UAA	*	UGA	*
+UUG	L	UCG	S	UAG	*	UGG	W
+CUU	L	CCU	P	CAU	H	CGU	R
+CUC	L	CCC	P	CAC	H	CGC	R
+CUA	L	CCA	P	CAA	Q	CGA	R
+CUG	L	CCG	P	CAG	Q	CGG	R
+AUU	I	ACU	T	AAU	N	AGU	S
+AUC	I	ACC	T	AAC	N	AGC	S
+AUA	I	ACA	T	AAA	K	AGA	R
+AUG	M	ACG	T	AAG	K	AGG	R
+GUU	V	GCU	A	GAU	D	GGU	G
+GUC	V	GCC	A	GAC	D	GGC	G
+GUA	V	GCA	A	GAA	E	GGA	G
+GUG	V	GCG	A	GAG	E	GGG	G
+RNA_CODON
+}
+
+
+sub amino_acids
+{
+print <<AMINO_ACIDS;
+A	Ala	alanine
+R	Arg	arginine
+N	Asn	asparagine
+D	Asp	aspartic acid
+C	Cys	cysteine
+E	Glu	glutamic acid
+Q	Gln	glutamine
+G	Gly	glycine
+H	His	histidine
+I	Ile	isoleucine
+L	Leu	leucine
+K	Lys	lysine
+M	Met	methionine
+F	Phe	phenylalanine
+P	Pro	proline
+S	Ser	serine
+T	Thr	threonine
+W	Trp	tryptophan
+Y	Tyr	tyrosine
+V	Val	valine
+B	Asx	aspartate or asparagine
+Z	Glx	glutamate or glutamine
+U	???	selenocysteine
+X	Xaa	any
+J	-	-
+O	-	-
+AMINO_ACIDS
+}
