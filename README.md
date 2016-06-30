@@ -6,11 +6,13 @@ A Perl module to handle DNA and RNA sequences
 
     $ perldoc Napoop.pm
 
+    use Napoop;
+
 ## napoop
 The command written in Perl and using Napoop.pm
 
 ## DESCRIPTION
-Hopefully, this script is a very useful one to handle varous nucleic acid sequences, i.e. DNAs and RNAs. Originally, Napoop.pm was written to study object-oriented programming in Perl. After coding Napoop.pm, preexisting miscellanious scripts were gathered to complete this script, napoop. The name NA, P, and OOP stand for Nucleic Acids, Perl, and Object-Oriented Programming, respectively. Currently, FASTA, GenBank, and EMBL formats are supported as input data as well as a raw sequence.
+Hopefully, this script is a useful command-line tool to handle varous nucleic acid sequences, i.e. DNAs and RNAs. Originally, Napoop.pm was written to study object-oriented programming in Perl. After coding Napoop.pm, preexisting miscellanious scripts were gathered to complete this script, napoop. This has been designed to be usefull especially when it is multiply pipe-lined. The name NA, P, and OOP stand for Nucleic Acids, Perl, and Object-Oriented Programming, respectively. Currently, FASTA, GenBank, and EMBL formats are supported as input data as well as a raw sequence.
 
 ## INSTALL
 Move Napoop.pm into one of the PERL5LIB directories and chmod +r.  
