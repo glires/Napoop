@@ -12,12 +12,11 @@ A Perl module to handle DNA and RNA sequences
 The command written in Perl and using Napoop.pm
 
 ## DESCRIPTION
-Hopefully, this script is a useful command-line tool to handle varous nucleic acid sequences, i.e. DNAs and RNAs. Originally, Napoop.pm was written to study object-oriented programming in Perl. After coding Napoop.pm, preexisting miscellanious scripts were gathered to complete this script, napoop. This has been designed to be usefull especially when it is multiply pipe-lined. The name NA, P, and OOP stand for Nucleic Acids, Perl, and Object-Oriented Programming, respectively. Currently, FASTA, GenBank, and EMBL formats are supported as input data as well as a raw sequence.
+Hopefully, this script is a useful command-line tool to handle varous nucleic acid sequences, i.e. DNAs and RNAs. Originally, Napoop.pm was written to study object-oriented programming in Perl. After coding Napoop.pm, preexisting miscellanious scripts were gathered to complete this script, napoop. This has been designed to be usefull especially when it is multiply pipe-lined. The name NA, P, and OOP stand for Nucleic Acids, Perl, and Object-Oriented Programming, respectively. Currently, FASTA, GenBank, and EMBL formats are supported as input data as well as a raw sequence in a simple test.
 
 ## INSTALL
-Move Napoop.pm into one of the PERL5LIB directories and chmod +r.  
-Move napoop into one of the PATH directories and chmod +rx.
-
+Move napoop into one of the PATH directories, such as /usr/local/bin, and chmod +rx. Check which napoop.
+Move Napoop.pm into one of the PERL5LIB directories, such as /usr/local/lib, and chmod +r. Unless echo $PERL5LIB prints the directory, export PERL5LIB=$PERL5LIB:/usr/local/lib or something like this.
 ## USAGE
 
     $ napoop               Is equivalent to adding "-h"
